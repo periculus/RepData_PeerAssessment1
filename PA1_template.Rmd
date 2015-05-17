@@ -7,19 +7,77 @@ output:
 
 
 ## Loading and preprocessing the data
+```{r loaddata, echo=TRUE}
+ad <- read.csv("activity.csv");
 
+# We'll be using these libraries in some of the chunks
+library(plyr)
+library(ggplot2)
+
+
+```
 
 
 ## What is mean total number of steps taken per day?
+```{r histandmean, echo=TRUE}
+stepsPerDay = aggregate(ad$steps, list(date = ad$date), function(x) {sum(x, na.rm = TRUE)})
 
+hist(stepsPerDay$x, main = "Number of steps per day", xlab = "Steps per day", ylab = "Frequency", breaks = 8)
 
+mean(stepsPerDay$x, na.rm = TRUE)
+median(stepsPerDay$x, na.rm = TRUE)
+```
 
 ## What is the average daily activity pattern?
+```{r dailypattern, echo=TRUE}
+stepsPerInt = aggregate(ad$steps, list(interval = ad$interval), function(x) {mean(x, na.rm = TRUE)})
+plot(stepsPerInt$interval, stepsPerInt$x, type = "l", xlab = "Time interval of day in hhmm", ylab = "Average steps in interval", main = "Average number of steps by time of day (5 min intervals)" )
 
-
+# Print the interval with the highes average dail activity pattern
+imax <- which.max(stepsPerInt$x); 
+stepsPerInt$interval[imax]
+```
 
 ## Imputing missing values
+```{r impute, echo=TRUE}
+# Copy data into a new structure
+ad2 <- ad
+I <- is.na(ad2$steps)
+imp <- join(ad2[I,], stepsPerInt, by = c("interval"))
+ad2$steps[I] <- imp$x
 
+stepsPerDay2 = aggregate(ad2$steps, list(date = ad2$date), function(x) {sum(x, na.rm = TRUE)})
+stepsPerInt2 = aggregate(ad2$steps, list(interval = ad2$interval), function(x) {mean(x, na.rm = TRUE)})
 
+hist(stepsPerDay2$x, main = "Number of steps per day", xlab = "Steps per day", ylab = "Frequency", breaks = 8)
+
+mean(stepsPerDay2$x, na.rm = TRUE)
+median(stepsPerDay2$x, na.rm = TRUE)
+```
 
 ## Are there differences in activity patterns between weekdays and weekends?
+```{r differences, echo=TRUE}
+weekend <- function(x) {
+  if(x %in% c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday")) {
+    r <- "weekday"
+  } else if (x %in% c("Saturday", "Sunday")) {
+    r <- "weekend"
+  } else {
+    r <- NA
+  }
+  r
+}
+
+ad$weekend <- as.factor(sapply(wd, weekend))
+I <- ad$weekend == "weekend"
+
+stepsPerIntWe = aggregate(ad$steps[I], list(interval = ad$interval[I]), function(x) {mean(x, na.rm = TRUE)})
+stepsPerIntWd = aggregate(ad$steps[!I], list(interval = ad$interval[!I]), function(x) {mean(x, na.rm = TRUE)})
+
+par(mfrow = c(2,1))
+plot(stepsPerIntWe$interval, stepsPerIntWe$x, type = "l", xlab = "Time interval of day in hhmm, ", ylab = "Average steps in interval", main = "Average number of steps by time of day (5 min intervals) -- Weekends" )
+plot(stepsPerIntWd$interval, stepsPerIntWd$x, type = "l", xlab = "Time interval of day in hhmm, ", ylab = "Average steps in interval", main = "Average number of steps by time of day (5 min intervals) -- Weekdays" )
+
+
+```
+
