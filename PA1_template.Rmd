@@ -19,7 +19,7 @@ library(ggplot2)
 
 
 ## What is mean total number of steps taken per day?
-```{r histandmean, echo=TRUE}
+```{r histandmean, echo=TRUE, fig.height=4}
 stepsPerDay = aggregate(ad$steps, list(date = ad$date), function(x) {sum(x, na.rm = TRUE)})
 
 hist(stepsPerDay$x, main = "Number of steps per day", xlab = "Steps per day", ylab = "Frequency", breaks = 8)
@@ -29,7 +29,7 @@ median(stepsPerDay$x, na.rm = TRUE)
 ```
 
 ## What is the average daily activity pattern?
-```{r dailypattern, echo=TRUE}
+```{r dailypattern, echo=TRUE, fig.height=4}
 stepsPerInt = aggregate(ad$steps, list(interval = ad$interval), function(x) {mean(x, na.rm = TRUE)})
 plot(stepsPerInt$interval, stepsPerInt$x, type = "l", xlab = "Time interval of day in hhmm", ylab = "Average steps in interval", main = "Average number of steps by time of day (5 min intervals)" )
 
@@ -39,7 +39,7 @@ stepsPerInt$interval[imax]
 ```
 
 ## Imputing missing values
-```{r impute, echo=TRUE}
+```{r impute, echo=TRUE, fig.height=4}
 # Copy data into a new structure
 ad2 <- ad
 I <- is.na(ad2$steps)
@@ -57,7 +57,10 @@ median(stepsPerDay2$x, na.rm = TRUE)
 
 ## Are there differences in activity patterns between weekdays and weekends?
 ```{r differences, echo=TRUE}
-weekend <- function(x) {
+
+Sys.setlocale("LC_TIME", "en_US")
+
+isWeekend <- function(x) {
   if(x %in% c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday")) {
     r <- "weekday"
   } else if (x %in% c("Saturday", "Sunday")) {
@@ -68,16 +71,18 @@ weekend <- function(x) {
   r
 }
 
-ad$weekend <- as.factor(sapply(wd, weekend))
+wd <- weekdays(as.Date(ad$date))
+
+
+ad$weekend <- sapply(wd, isWeekend)
+
 I <- ad$weekend == "weekend"
 
 stepsPerIntWe = aggregate(ad$steps[I], list(interval = ad$interval[I]), function(x) {mean(x, na.rm = TRUE)})
 stepsPerIntWd = aggregate(ad$steps[!I], list(interval = ad$interval[!I]), function(x) {mean(x, na.rm = TRUE)})
 
-par(mfrow = c(2,1))
 plot(stepsPerIntWe$interval, stepsPerIntWe$x, type = "l", xlab = "Time interval of day in hhmm, ", ylab = "Average steps in interval", main = "Average number of steps by time of day (5 min intervals) -- Weekends" )
 plot(stepsPerIntWd$interval, stepsPerIntWd$x, type = "l", xlab = "Time interval of day in hhmm, ", ylab = "Average steps in interval", main = "Average number of steps by time of day (5 min intervals) -- Weekdays" )
-
 
 ```
 
